@@ -1,7 +1,7 @@
 import type { Gender, SpellingVariant } from '../types.js';
 import type { NameRecord } from '../data/names.js';
 import { canonicalKey } from './canonicalizer.js';
-import { VARIANT_FAMILIES, familyIdFor } from './families.js';
+import { getFamilies, familyIdFor } from './families.js';
 import { normalizeName } from './phonetics.js';
 
 interface IndexedSpelling {
@@ -22,6 +22,16 @@ export class SpellingIndex {
   private groups = new Map<string, Map<string, IndexedSpelling>>();
 
   constructor(records: NameRecord[]) {
+    this.rebuild(records);
+  }
+
+  /**
+   * Rebuild the whole index from a fresh set of records. Called on boot from the
+   * database and again after the admin panel edits the names or families, so the
+   * deck reflects changes without a restart.
+   */
+  rebuild(records: NameRecord[]): void {
+    this.groups = new Map();
     for (const record of records) {
       this.add(record.name, record.gender, record.count);
     }
@@ -50,7 +60,7 @@ export class SpellingIndex {
    * popularity data, so "common spellings" reflects the full family.
    */
   private foldInFamilies(): void {
-    for (const family of VARIANT_FAMILIES) {
+    for (const family of getFamilies()) {
       let group = this.groups.get(family.id);
       if (!group) {
         group = new Map();
@@ -67,7 +77,7 @@ export class SpellingIndex {
   private familyOrder(name: string): number {
     const familyId = familyIdFor(name);
     if (!familyId) return Number.MAX_SAFE_INTEGER;
-    const members = VARIANT_FAMILIES.find((f) => f.id === familyId)?.members ?? [];
+    const members = getFamilies().find((f) => f.id === familyId)?.members ?? [];
     const idx = members.findIndex((m) => normalizeName(m) === normalizeName(name));
     return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
   }

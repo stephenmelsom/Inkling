@@ -99,13 +99,27 @@ npm test
 | `ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` | Enables the LLM provider. |
 | `NAMEGEN_LLM_MODEL` | Override the Claude model (default `claude-opus-4-8`). |
 | `NAMEGEN_NAMES_API_URL` | Live names endpoint for the external provider (`[{name,gender,count}]`). |
+| `ADMIN_PASSWORD` | Shared password for the admin panel at `/admin`. Unset = admin fails closed (503). |
+| `INKLING_DB_PATH` | SQLite file location (default `server/data/inkling.db`). |
 | `PORT` | Server port (default `3001`). |
+
+### Admin panel (`/admin`)
+
+A password-gated back-office ("the bindery") for operating the deck. Set
+`ADMIN_PASSWORD`, then visit `/admin` and sign in. It manages the **names
+dataset**, the **variant families** (with a live collation tester that shows how
+any name canonicalizes), **provider** health and on/off toggles, and aggregate
+**analytics** of what gets kept vs. passed. Edits persist in SQLite — the
+previously-hardcoded `SEED_NAMES`/`VARIANT_FAMILIES` become the seed for a fresh
+database, after which the database is authoritative and changes take effect live
+without a restart.
 
 ## Notes & limitations
 
-- Sessions are in-memory (single-process). Swap `SessionStore` for a persistent
-  store to scale out.
+- Swipe sessions are in-memory (single-process); only the aggregate swipe log is
+  persisted (for analytics). Swap `SessionStore` for a persistent store to scale
+  the live deck out.
 - Phonetic auto-grouping is a heuristic; it can occasionally over-merge
   sound-alikes that are arguably different names. The curated family layer exists
-  to correct the cases that matter and always takes precedence — extend it in
-  `families.ts`.
+  to correct the cases that matter and always takes precedence — edit families in
+  the admin panel (or seed new ones in `families.ts` for a fresh database).

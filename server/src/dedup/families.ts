@@ -24,6 +24,12 @@ export interface VariantFamily {
   members: string[];
 }
 
+/**
+ * The built-in families. These are the *seed* set: on a fresh database they
+ * populate the `families` table, after which the database is authoritative and
+ * the admin panel can add/edit/remove families. Until `reloadFamilies` is
+ * called (e.g. in tests with no database), the seed set is what's active.
+ */
 export const VARIANT_FAMILIES: VariantFamily[] = [
   { id: 'fam:elizabeth', members: ['Elizabeth', 'Eliza', 'Liza', 'Lizbeth', 'Beth', 'Lisbeth'] },
   { id: 'fam:catherine', members: ['Catherine', 'Katherine', 'Kathryn', 'Katharine', 'Catharine'] },
@@ -38,23 +44,43 @@ export const VARIANT_FAMILIES: VariantFamily[] = [
   { id: 'fam:zoe', members: ['Zoe', 'Zoey', 'Zoie', 'Zooey'] },
 ];
 
-/** name (normalized) -> family id. Built once at module load. */
-const FAMILY_INDEX: Map<string, string> = (() => {
+/** The currently-active families. Swapped wholesale by `reloadFamilies`. */
+let activeFamilies: VariantFamily[] = VARIANT_FAMILIES;
+/** name (normalized) -> family id, derived from `activeFamilies`. */
+let familyIndex: Map<string, string> = buildIndex(activeFamilies);
+
+function buildIndex(families: VariantFamily[]): Map<string, string> {
   const index = new Map<string, string>();
-  for (const family of VARIANT_FAMILIES) {
+  for (const family of families) {
     for (const member of family.members) {
       index.set(normalizeName(member), family.id);
     }
   }
   return index;
-})();
+}
+
+/**
+ * Replace the active family set (e.g. with the rows loaded from the database)
+ * and rebuild the lookup index. Call this after any admin edit so the deck's
+ * dedup, the spelling index, and the "common spellings" view all pick it up
+ * without a restart.
+ */
+export function reloadFamilies(families: VariantFamily[]): void {
+  activeFamilies = families;
+  familyIndex = buildIndex(families);
+}
+
+/** The currently-active families, in their current order. */
+export function getFamilies(): VariantFamily[] {
+  return activeFamilies;
+}
 
 /** Returns the curated family id for a name, or undefined if it isn't in one. */
 export function familyIdFor(name: string): string | undefined {
-  return FAMILY_INDEX.get(normalizeName(name));
+  return familyIndex.get(normalizeName(name));
 }
 
 /** All conventional/base spellings declared by a family, in declared order. */
 export function familyMembers(familyId: string): string[] {
-  return VARIANT_FAMILIES.find((f) => f.id === familyId)?.members ?? [];
+  return activeFamilies.find((f) => f.id === familyId)?.members ?? [];
 }

@@ -5,3 +5,9 @@ dist/
 .env
 .env.local
 *.tsbuildinfo
+
+# SQLite database (created at runtime; seeded from the static data)
+server/data/
+*.db
+*.db-wal
+*.db-shm

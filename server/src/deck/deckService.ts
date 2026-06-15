@@ -21,15 +21,24 @@ const QUEUE_TARGET = 16;
  * cards one at a time, and records likes/dislikes.
  */
 export class DeckService {
+  /**
+   * `isEnabled` is the operator toggle from the admin panel: a provider can be
+   * available (has credentials/data) yet switched off. It defaults to always-on
+   * so the deck works without the admin layer wired up.
+   */
   constructor(
     private readonly providers: NameProvider[],
     private readonly spellingIndex: SpellingIndex,
+    private readonly isEnabled: (id: string) => boolean = () => true,
   ) {}
 
-  /** Names of the providers currently able to contribute. */
+  /** Names of the providers currently able to contribute (available and enabled). */
   async availableProviders(): Promise<string[]> {
     const flags = await Promise.all(
-      this.providers.map(async (p) => ({ id: p.id, ok: await p.isAvailable() })),
+      this.providers.map(async (p) => ({
+        id: p.id,
+        ok: this.isEnabled(p.id) && (await p.isAvailable()),
+      })),
     );
     return flags.filter((f) => f.ok).map((f) => f.id);
   }
@@ -80,7 +89,9 @@ export class DeckService {
 
     const available = (
       await Promise.all(
-        this.providers.map(async (p) => ((await p.isAvailable()) ? p : null)),
+        this.providers.map(async (p) =>
+          this.isEnabled(p.id) && (await p.isAvailable()) ? p : null,
+        ),
       )
     ).filter((p): p is NameProvider => p !== null);
 

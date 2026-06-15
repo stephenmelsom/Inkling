@@ -19,6 +19,14 @@ export class ExternalApiNameProvider implements NameProvider {
   private readonly apiUrl = process.env.NAMEGEN_NAMES_API_URL;
   private cache: NameRecord[] | null = null;
 
+  /**
+   * `fallbackRecords` is the offline dataset. By default it's the bundled seed,
+   * but the server wires it to the database so admin edits to the names dataset
+   * are reflected here. Live-fetched data (when `NAMEGEN_NAMES_API_URL` is set)
+   * is cached; the fallback is not, so it always sees the latest edits.
+   */
+  constructor(private readonly fallbackRecords: () => NameRecord[] = () => SEED_NAMES) {}
+
   isAvailable(): boolean {
     // Always available: it has the bundled dataset to fall back on.
     return true;
@@ -26,8 +34,12 @@ export class ExternalApiNameProvider implements NameProvider {
 
   private async records(): Promise<NameRecord[]> {
     if (this.cache) return this.cache;
-    this.cache = (await this.tryFetchLive()) ?? SEED_NAMES;
-    return this.cache;
+    const live = await this.tryFetchLive();
+    if (live) {
+      this.cache = live;
+      return live;
+    }
+    return this.fallbackRecords();
   }
 
   private async tryFetchLive(): Promise<NameRecord[] | null> {
