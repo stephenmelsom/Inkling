@@ -11,8 +11,10 @@ export interface SessionState {
   queue: DeckCard[];
   /** Cards the user liked, most recent last. */
   likes: DeckCard[];
-  /** Canonical keys the user disliked. */
+  /** Canonical keys the user disliked — drives dedup (never re-propose these). */
   dislikedKeys: Set<string>;
+  /** Cards the user disliked, kept for negative recommendation signal. */
+  dislikes: DeckCard[];
   /** Lookup for resolving a swipe back to its card. */
   cardsById: Map<string, DeckCard>;
   createdAt: number;
@@ -29,6 +31,7 @@ export class SessionStore {
       queue: [],
       likes: [],
       dislikedKeys: new Set(),
+      dislikes: [],
       cardsById: new Map(),
       createdAt: Date.now(),
     };

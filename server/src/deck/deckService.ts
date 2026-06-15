@@ -9,6 +9,7 @@ import type {
 } from '../types.js';
 import { canonicalKey } from '../dedup/canonicalizer.js';
 import { SpellingIndex } from '../dedup/spellingIndex.js';
+import { buildProfile, rankCards } from '../recommend/profile.js';
 import type { SessionState } from '../session/store.js';
 
 const QUEUE_LOW_WATERMARK = 6;
@@ -60,6 +61,7 @@ export class DeckService {
       session.likes.push(card);
     } else {
       session.dislikedKeys.add(card.canonicalKey);
+      session.dislikes.push(card);
     }
     return true;
   }
@@ -97,6 +99,9 @@ export class DeckService {
 
     if (available.length === 0) return;
 
+    // Learn the user's taste so providers can steer and we can rank the results.
+    const profile = buildProfile(session.likes, session.dislikes);
+
     const ctx: ProposalContext = {
       gender: session.gender,
       liked: session.likes.map((c) => c.name),
@@ -104,32 +109,56 @@ export class DeckService {
       seenCanonicalKeys: [...session.seenKeys],
       // Over-ask: dedup discards a lot, and we split the ask across providers.
       count: Math.max(4, Math.ceil((need * 2) / available.length)),
+      profile,
     };
 
     const batches = await Promise.all(
       available.map((p) => p.propose(ctx).catch(() => [] as NameCandidate[])),
     );
 
-    // Interleave providers so one source doesn't dominate the top of the deck.
+    // Interleave providers (so one source doesn't dominate), dedup into cards,
+    // then rank by taste. Until the user has swiped, the profile is empty and
+    // `rankCards` leaves the round-robin order untouched.
+    const pendingKeys = new Set<string>();
+    const built: DeckCard[] = [];
     for (const candidate of interleave(batches)) {
+      const card = this.tryBuildCard(session, candidate, pendingKeys);
+      if (card) built.push(card);
+    }
+
+    for (const card of rankCards(built, profile)) {
       if (session.queue.length >= QUEUE_TARGET) break;
-      this.tryEnqueue(session, candidate);
+      session.seenKeys.add(card.canonicalKey);
+      session.queue.push(card);
+      session.cardsById.set(card.id, card);
     }
   }
 
-  /** Build a deduped card from a candidate, or skip it. */
-  private tryEnqueue(session: SessionState, candidate: NameCandidate): void {
-    if (!candidate.name?.trim()) return;
+  /**
+   * Build a deduped card from a candidate, or return null to skip it. Dedup is
+   * against everything seen/disliked plus `pendingKeys` (cards built earlier in
+   * this same refill). Does not commit the card to the session — the caller does
+   * that after ranking, so scoring happens before we spend the queue budget.
+   */
+  private tryBuildCard(
+    session: SessionState,
+    candidate: NameCandidate,
+    pendingKeys: Set<string>,
+  ): DeckCard | null {
+    if (!candidate.name?.trim()) return null;
     const gender: Gender | undefined = candidate.gender ?? session.gender;
     const key = canonicalKey(candidate.name, gender);
 
-    if (session.seenKeys.has(key) || session.dislikedKeys.has(key)) return;
+    if (session.seenKeys.has(key) || session.dislikedKeys.has(key) || pendingKeys.has(key)) {
+      return null;
+    }
+    pendingKeys.add(key);
 
     // Show the most common spelling of the group, not whatever spelling the
     // provider happened to use.
     const representative = this.spellingIndex.representativeFor(candidate.name, gender);
 
-    const card: DeckCard = {
+    return {
       id: randomUUID(),
       name: representative,
       gender,
@@ -138,10 +167,6 @@ export class DeckService {
       source: candidate.source,
       canonicalKey: key,
     };
-
-    session.seenKeys.add(key);
-    session.queue.push(card);
-    session.cardsById.set(card.id, card);
   }
 }
 

@@ -48,6 +48,9 @@ export class LlmNameProvider implements NameProvider {
     const likedLine = ctx.liked.length
       ? `The user has LIKED these names: ${ctx.liked.join(', ')}. Propose names with a similar feel, but do not repeat them or offer mere spelling/nickname variants of them.`
       : 'The user has not liked any names yet.';
+    const profileLine = ctx.profile?.summary
+      ? `Their taste so far leans toward: ${ctx.profile.summary}. Favour names that fit this profile.`
+      : '';
     const dislikedLine = ctx.disliked.length
       ? `The user has REJECTED these names (avoid them and anything close to them): ${ctx.disliked.join(', ')}.`
       : '';
@@ -56,6 +59,7 @@ export class LlmNameProvider implements NameProvider {
       `Propose ${ctx.count} baby names.`,
       genderLine,
       likedLine,
+      profileLine,
       dislikedLine,
       'Hard requirements:',
       '- Every name must be SEMANTICALLY DISTINCT from the others — no two names that are spelling variants, nicknames, or diminutives of the same underlying name.',

@@ -45,6 +45,55 @@ export interface ProposalContext {
   seenCanonicalKeys: string[];
   /** How many fresh candidates the deck would like back. */
   count: number;
+  /**
+   * The user's learned taste, derived from likes/dislikes. Optional and only
+   * meaningful once they've swiped; providers may use `profile.summary` to steer
+   * generation. The deck ranks candidates against this regardless.
+   */
+  profile?: PreferenceProfile;
+}
+
+/** The taste signals extracted from a single name, used for recommendation. */
+export interface NameFeatures {
+  /** Cultural origin, lowercased (e.g. "greek"). */
+  origin?: string;
+  gender?: Gender;
+  /** First letter of the normalized spelling. */
+  initial: string;
+  /** Last two letters of the normalized spelling — captures the "-ia"/"-en" feel. */
+  ending: string;
+  /** Count of vowel groups (a cheap syllable proxy). */
+  syllables: number;
+  /** Length of the normalized spelling. */
+  length: number;
+}
+
+/**
+ * A user's aggregated name taste, built from the cards they've liked (positive
+ * signal) and disliked (negative signal). Drives both deck ranking and LLM
+ * prompt steering.
+ */
+export interface PreferenceProfile {
+  /** Number of liked names backing this profile. */
+  count: number;
+  /** origin -> like frequency. */
+  origins: Map<string, number>;
+  /** initial letter -> like frequency. */
+  initials: Map<string, number>;
+  /** two-letter ending -> like frequency. */
+  endings: Map<string, number>;
+  /** gender -> like frequency. */
+  genders: Map<Gender, number>;
+  /** Mean syllable count across likes (0 when there are none). */
+  avgSyllables: number;
+  /** Mean normalized length across likes (0 when there are none). */
+  avgLength: number;
+  /** Namespaced features seen only in dislikes, e.g. "origin:french", "ending:yn". */
+  avoid: Set<string>;
+  /** Human-readable taste summary for prompt steering; empty when no likes. */
+  summary: string;
+  /** True when there's no signal at all (no likes and no dislikes). */
+  isEmpty: boolean;
 }
 
 /** A name-proposal system. Implementations live in `providers/`. */
