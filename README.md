@@ -1,8 +1,8 @@
-# BabyNamer
+# Inkling
 
-A baby-name generator with a Tinder-style "swipe right" UX. Names are sourced
-from **multiple pluggable proposal systems**, deduplicated so you never see the
-same name spelled (or nicknamed) two different ways, and — once you like a name —
+*A name, in the making.* A baby-name generator with a swipe-to-keep UX. Names are
+sourced from **multiple pluggable proposal systems**, deduplicated so you never see
+the same name spelled (or nicknamed) two different ways, and — once you keep a name —
 expanded into its **common spellings**.
 
 ```
@@ -17,7 +17,7 @@ expanded into its **common spellings**.
 
 | Requirement | How it's implemented |
 |---|---|
-| **Tinder-style swipe UX** | React card stack with drag gestures + ✕/♥ buttons (`client/src/components/SwipeCard.tsx`). |
+| **Tinder-style swipe UX** | React card stack with drag gestures + pass/keep buttons (`client/src/components/SwipeCard.tsx`). |
 | **Integrate multiple name-proposal systems** | A `NameProvider` interface (`server/src/types.ts`) with three implementations; add more by dropping them into `providers/registry.ts`. |
 | **Names should be semantically different** | The deck never serves two cards from the same *canonical group*. Spelling variants **and** nickname/diminutive families collapse to one group. |
 | **Never show the same name spelled multiple ways** | Spelling variants share a phonetic key (Double Metaphone); curated families handle the rest. Only the most common spelling is shown. |

@@ -80,5 +80,5 @@ if (fs.existsSync(clientDist)) {
 
 const PORT = Number(process.env.PORT ?? 3001);
 app.listen(PORT, () => {
-  console.log(`BabyNamer server listening on http://localhost:${PORT}`);
+  console.log(`Inkling server listening on http://localhost:${PORT}`);
 });

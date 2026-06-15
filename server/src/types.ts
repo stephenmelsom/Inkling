@@ -1,5 +1,5 @@
 /**
- * Shared domain types for BabyNamer.
+ * Shared domain types for Inkling.
  *
  * The product has three moving parts that these types tie together:
  *   1. Name-proposal providers, which emit `NameCandidate`s.

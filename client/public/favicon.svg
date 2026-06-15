@@ -1,0 +1,20 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Inkling">
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#232a4d" />
+      <stop offset="1" stop-color="#191d35" />
+    </linearGradient>
+    <linearGradient id="gild" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6c074" />
+      <stop offset="1" stop-color="#c79a4e" />
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="100" height="100" rx="24" fill="url(#ground)" />
+  <rect x="14" y="14" width="72" height="72" rx="16" fill="none" stroke="#c79a4e" stroke-opacity="0.32" />
+  <!-- High-contrast serif "I": broad stem, thin slab serifs -->
+  <g fill="url(#gild)">
+    <rect x="42.5" y="28" width="15" height="44" rx="1.5" />
+    <rect x="31" y="27" width="38" height="6.5" rx="2" />
+    <rect x="31" y="66.5" width="38" height="6.5" rx="2" />
+  </g>
+</svg>

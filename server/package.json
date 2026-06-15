@@ -1,9 +1,9 @@
 {
-  "name": "babynamer-server",
+  "name": "inkling-server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Backend for BabyNamer: pluggable name-proposal providers + spelling-variant canonicalization + swipe deck.",
+  "description": "Backend for Inkling: pluggable name-proposal providers + spelling-variant canonicalization + swipe deck.",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",

@@ -1,24 +1,36 @@
 import { useState } from 'react';
 import type { LikedName } from '../types';
+import { IlluminatedName } from './IlluminatedName';
 
 interface Props {
   liked: LikedName[];
 }
 
-/** Sidebar of liked names; each expands to show the common spellings of that name. */
+/** The register: kept names, each expandable to show how else the name is written. */
 export function LikedPanel({ liked }: Props) {
   return (
-    <aside className="liked-panel">
-      <h3>Liked names ({liked.length})</h3>
-      {liked.length === 0 && <p className="muted">Swipe right on names you love. They'll collect here.</p>}
-      <ul className="liked-list">
-        {liked
-          .slice()
-          .reverse()
-          .map((item) => (
-            <LikedRow key={item.cardId} item={item} />
-          ))}
-      </ul>
+    <aside className="register">
+      <header className="register-head">
+        <h2>The register</h2>
+        <span className="register-count">
+          {liked.length} {liked.length === 1 ? 'name' : 'names'} kept
+        </span>
+      </header>
+
+      {liked.length === 0 ? (
+        <p className="register-empty">
+          Nothing kept yet. The names you keep are written down here — with every way they're spelled.
+        </p>
+      ) : (
+        <ul className="register-list">
+          {liked
+            .slice()
+            .reverse()
+            .map((item) => (
+              <LikedRow key={item.cardId} item={item} />
+            ))}
+        </ul>
+      )}
     </aside>
   );
 }
@@ -28,12 +40,16 @@ function LikedRow({ item }: { item: LikedName }) {
   const hasVariants = item.spellings.length > 1;
 
   return (
-    <li className="liked-row">
-      <button className="liked-head" onClick={() => hasVariants && setOpen((o) => !o)}>
-        <span className="liked-name">{item.name}</span>
+    <li className="register-row">
+      <button
+        className="register-entry"
+        onClick={() => hasVariants && setOpen((o) => !o)}
+        aria-expanded={hasVariants ? open : undefined}
+      >
+        <IlluminatedName name={item.name} className="register-name" />
         {hasVariants && (
-          <span className="variant-count">
-            {item.spellings.length} spellings {open ? '▾' : '▸'}
+          <span className="register-also">
+            also written {open ? '−' : '+'}
           </span>
         )}
       </button>
@@ -42,7 +58,7 @@ function LikedRow({ item }: { item: LikedName }) {
           {item.spellings.map((s) => (
             <li key={s.name} className={s.primary ? 'spelling primary' : 'spelling'}>
               <span>{s.name}</span>
-              {s.primary && <span className="badge">most common</span>}
+              {s.primary && <span className="badge">most chosen</span>}
             </li>
           ))}
         </ul>

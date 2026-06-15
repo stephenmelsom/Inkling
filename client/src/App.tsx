@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SwipeCard } from './components/SwipeCard';
 import { LikedPanel } from './components/LikedPanel';
+import { IlluminatedName } from './components/IlluminatedName';
 import * as api from './api';
 import type { DeckCard, Gender, LikedName, ProviderInfo } from './types';
 
@@ -67,38 +68,61 @@ export function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>BabyNamer</h1>
-        <p className="tagline">Swipe right on names you love.</p>
+        <span className="wordmark">Inkling</span>
+        <span className="app-tagline">Keep the ones worth keeping</span>
       </header>
 
       <main className="layout">
         <section className="deck-area">
           <div className="deck">
             {back && (
-              <div className="card card-back">
-                <h2 className="card-name">{back.name}</h2>
+              <div className="card card-back" aria-hidden="true">
+                <IlluminatedName name={back.name} className="card-name" />
               </div>
             )}
             {front ? (
               <SwipeCard key={front.id} card={front} onSwipe={onSwipe} />
             ) : done ? (
               <div className="empty">
-                <p>That's every distinct name we have for now.</p>
+                <p className="empty-line">That's every distinct name we have for you tonight.</p>
                 <button className="restart" onClick={() => start()}>
-                  Start over
+                  Begin again
                 </button>
               </div>
             ) : (
               <div className="empty">
-                <p>Finding names…</p>
+                <p className="empty-line">Turning the page…</p>
               </div>
             )}
           </div>
-          <p className="hint">Drag the card, or tap ✕ / ♥</p>
+          <p className="hint">Drag the card, or tap to pass and keep</p>
         </section>
 
         <LikedPanel liked={liked} />
       </main>
+    </div>
+  );
+}
+
+const DEMO_NAMES = ['Eleanor', 'Soren', 'Maeve', 'Aurelio', 'Wren', 'Theodore', 'Isolde', 'Caspian'];
+
+/** Cycles names through the illuminated treatment — a live taste of the card. */
+function RotatingName() {
+  const [i, setI] = useState(0);
+  const reduced = useRef(
+    typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
+
+  useEffect(() => {
+    if (reduced.current) return;
+    const t = setInterval(() => setI((n) => (n + 1) % DEMO_NAMES.length), 2400);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="hero-name" aria-hidden="true">
+      <IlluminatedName key={DEMO_NAMES[i]} name={DEMO_NAMES[i]} className="hero-name-text" />
     </div>
   );
 }
@@ -112,17 +136,20 @@ function StartScreen({
 }) {
   return (
     <div className="start">
-      <h1>BabyNamer</h1>
-      <p className="tagline">A Tinder-style way to find a baby name.</p>
-      <p className="blurb">
-        Names come from multiple proposal systems. We collapse spelling variants and nicknames so you
-        only ever swipe on genuinely different names — then show you the common spellings once you like one.
+      <span className="wordmark start-wordmark">Inkling</span>
+
+      <RotatingName />
+
+      <p className="lede">
+        The first thing you'll ever give them. Keep the names you love — we quietly fold
+        away the spelling variants and nicknames, so you only ever weigh names that are
+        truly different.
       </p>
 
       <div className="gender-choice">
         <button onClick={() => onStart('girl')}>Girl names</button>
         <button onClick={() => onStart('boy')}>Boy names</button>
-        <button onClick={() => onStart('neutral')}>Neutral</button>
+        <button onClick={() => onStart('neutral')}>Either way</button>
         <button className="secondary" onClick={() => onStart(undefined)}>
           Surprise me
         </button>
@@ -130,7 +157,7 @@ function StartScreen({
 
       {providers && (
         <p className="providers">
-          Sources:{' '}
+          <span className="providers-label">Drawn from</span>
           {providers.providers.map((p) => (
             <span
               key={p.id}
